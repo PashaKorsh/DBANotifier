@@ -21,7 +21,6 @@ class Main:
         self.telegramBot = TelegramBot(self.config)
         self.chat_ids = set()
         self.lock = threading.Lock()
-        threading.Thread(target=self.work, daemon=True).start()
 
     def is_need_to_notify(self):
         now = datetime.now()
@@ -32,16 +31,6 @@ class Main:
             if 0 <= delta.total_seconds() < self.config.reboot_time:
                 return True
         return False
-
-    def loop(self):
-        while True:
-            if self.is_need_to_notify():
-                phrase = self.tableParser.make_phrase(datetime.now())
-                self.lock.acquire()
-                for chat_id in self.chat_ids:
-                    self.telegramBot.sendMessage(phrase, chat_id)
-                self.lock.release()
-            time.sleep(self.config.reboot_time)
     
     def work(self):
         for update in self.telegramBot.getUpdates():
@@ -56,6 +45,17 @@ class Main:
                     self.telegramBot.sendMessage('OK Stop', chat_id)
                     self.chat_ids.remove(chat_id)
                 self.lock.release()
+
+    def loop(self):
+        threading.Thread(target=self.work, daemon=True).start()
+        while True:
+            if self.is_need_to_notify():
+                phrase = self.tableParser.make_phrase(datetime.now())
+                self.lock.acquire()
+                for chat_id in self.chat_ids:
+                    self.telegramBot.sendMessage(phrase, chat_id)
+                self.lock.release()
+            time.sleep(self.config.reboot_time)
 
 if __name__ == '__main__':
     Main().loop()

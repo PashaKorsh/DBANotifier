@@ -4,12 +4,12 @@ from datetime import datetime
 class TelegramBot:
     def __init__(self, config):
         self.config = config
-        def _get(method, *args, **kwargs):
-            return requests.get(f'https://api.telegram.org/bot{self.config.api_token}/{method}', *args, **kwargs)
-        self.get = _get
-        def _post(method, *args, **kwargs):
-            return requests.post(f'https://api.telegram.org/bot{self.config.api_token}/{method}', *args, **kwargs)
-        self.post = _post
+
+    def get(self, method, *args, **kwargs):
+        return requests.get(f'https://api.telegram.org/bot{self.config.api_token}/{method}', *args, **kwargs)
+    
+    def post(self, method, *args, **kwargs):
+        return requests.post(f'https://api.telegram.org/bot{self.config.api_token}/{method}', *args, **kwargs)
     
     def getUpdates(self):
         offset = 0
