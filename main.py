@@ -1,6 +1,5 @@
-import time, threading, json
+import time, threading
 from datetime import datetime, timedelta
-from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from TelegramBot import TelegramBot
 from TableParser import TableParser
@@ -58,4 +57,5 @@ class Main:
                     self.chat_ids.remove(chat_id)
                 self.lock.release()
 
-Main().loop()
+if __name__ == '__main__':
+    Main().loop()
