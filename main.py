@@ -1,4 +1,4 @@
-import time, threading
+import time, threading, json
 from datetime import datetime, timedelta
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from TelegramBot import TelegramBot
@@ -19,8 +19,16 @@ class Main:
         self.config = Settings()
         self.tableParser = TableParser(self.config)
         self.telegramBot = TelegramBot(self.config)
-        self.chat_ids = set()
+        self.chat_ids = self.read_chats()
         self.lock = threading.Lock()
+
+    def write_chats(self):
+        with open('active_chats.json', 'w') as f:
+            f.write(str(list(self.chat_ids)))
+        
+    def read_chats(self):
+        with open('active_chats.json', 'r') as f:
+            return set(json.loads(f.read()))
 
     def is_need_to_notify(self):
         now = datetime.now()
@@ -31,7 +39,7 @@ class Main:
             if 0 <= delta.total_seconds() < self.config.reboot_time:
                 return True
         return False
-    
+
     def work(self):
         for update in self.telegramBot.getUpdates():
             if 'message' in update and 'text' in update['message']:
@@ -41,9 +49,11 @@ class Main:
                 if text == '/start' and chat_id not in self.chat_ids:
                     self.telegramBot.sendMessage('OK Start', chat_id)
                     self.chat_ids.add(chat_id)
+                    self.write_chats()
                 if text == '/stop' and chat_id in self.chat_ids:
                     self.telegramBot.sendMessage('OK Stop', chat_id)
                     self.chat_ids.remove(chat_id)
+                    self.write_chats()
                 self.lock.release()
 
     def loop(self):
