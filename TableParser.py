@@ -36,4 +36,3 @@ class TableParser:
             if colors[i] in reasons:
                 res[i] = reasons[colors[i]]
         return res
-        # wb.save(config.table_path)
