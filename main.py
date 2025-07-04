@@ -1,7 +1,9 @@
-import datetime, time, threading
+import time, threading, json
+from datetime import datetime, timedelta
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from TableParser import TableParser
 from TelegramBot import TelegramBot
+from TableParser import TableParser
 
 class Settings(BaseSettings):
     api_token: str
@@ -10,7 +12,7 @@ class Settings(BaseSettings):
     reasons_count: int
     dba_count: int
     reboot_time: int
-    notify_times: str
+    notify_times: list
     model_config = SettingsConfigDict(env_file=".env")
 
 class Main:
@@ -22,13 +24,28 @@ class Main:
         self.lock = threading.Lock()
         threading.Thread(target=self.work, daemon=True).start()
 
+    def is_need_to_notify(self):
+        now = datetime.now()
+        for i in self.config.notify_times:
+            _time = datetime.strptime(i.split()[0], '%H:%M')
+            _date = now + timedelta(days={'Mon':0,'Tue':1,'Wed':2,'Thu':3,'Fri':4,'Sat':5,'Sun':6}[i.split()[-1]] - now.weekday())
+            delta = now - datetime(year=_date.year, month=_date.month, day=_date.day, hour=_time.hour, minute=_time.minute)
+            if 0 <= delta.total_seconds() < self.config.reboot_time:
+                return True
+        return False
+
     def loop(self):
         while True:
-            pass
+            if self.is_need_to_notify():
+                phrase = self.tableParser.make_phrase(datetime.now())
+                self.lock.acquire()
+                for chat_id in self.chat_ids:
+                    self.telegramBot.sendMessage(phrase, chat_id)
+                self.lock.release()
+            time.sleep(self.config.reboot_time)
     
     def work(self):
         for update in self.telegramBot.getUpdates():
-            print(update)
             if 'message' in update and 'text' in update['message']:
                 chat_id = update['message']['chat']['id']
                 text = update['message']['text']

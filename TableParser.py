@@ -1,5 +1,6 @@
 from openpyxl import load_workbook
 from openpyxl.utils.cell import *
+import json
 
 class TableParser:
     def __init__(self, config):
@@ -36,3 +37,12 @@ class TableParser:
             if colors[i] in reasons:
                 res[i] = reasons[colors[i]]
         return res
+    
+    def make_phrase(self, date):
+        with open('phrases.json', encoding='utf-8') as f:
+            phrases = json.loads(f.read())
+
+        phrase = phrases['hello'] + '\n'
+        phrase += '\n'.join(phrases['reasons'][j].format(i) for i,j in self.parse_reasons(date).items())
+        phrase += '\n' + phrases['bye']
+        return phrase
