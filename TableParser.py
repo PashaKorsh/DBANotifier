@@ -43,7 +43,11 @@ class TableParser:
             with open('phrases.json', encoding='utf-8') as f:
                 phrases = json.loads(f.read())
             phrase = phrases['hello'] + '\n\n'
-            phrase += '\n'.join(phrases['reasons'][j].format(i) for i,j in self.parse_reasons(date).items())
+            reasons = self.parse_reasons(date)
+            if len(reasons) == 0:
+                phrase += phrases['alright']
+            else:
+                phrase += '\n'.join(phrases['reasons'][j].format(i) for i,j in reasons.items())
             phrase += '\n\n' + phrases['bye']
             return phrase
         except Exception as e:
